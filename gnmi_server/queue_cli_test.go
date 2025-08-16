@@ -108,6 +108,15 @@ func TestGetQueueCounters(t *testing.T) {
 			wantRespVal: twoSelectedQueueCounters,
 			valTest:     true,
 		},
+		{
+			desc:       "query SHOW queue counters interfaces option (invalid interface)",
+			pathTarget: "SHOW",
+			textPbPath: `
+				elem: <name: "queue" >
+				elem: <name: "counters" key: { key: "interfaces" value: "Ethernet7" }>
+			`,
+			wantRetCode: codes.NotFound,
+		},
 	}
 
 	for _, test := range tests {

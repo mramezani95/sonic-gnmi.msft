@@ -8,55 +8,26 @@ import (
 	sdc "github.com/sonic-net/sonic-gnmi/sonic_data_client"
 )
 
-const dbName = "COUNTERS_DB"
-
-var separator string
-
-func init() {
-	var err error
-	separator, err = sdc.GetTableKeySeparator(dbName, "")
-	if err != nil {
-		log.Warningf("Failed to get table key separator for %s: %v\nUsing the default separator ':'.", dbName, err)
-		separator = ":"
-	}
+type queueCountersResponse struct {
+	Packets            string `json:"Counter/pkts"`
+	Bytes              string `json:"Counter/bytes"`
+	DroppedPackets     string `json:"Drop/pkts"`
+	DroppedBytes       string `json:"Drop/bytes"`
+	TrimmedPackets     string `json:"Trim/pkts"`
+	WREDDroppedPackets string `json:"WredDrp/pkts"`
+	WREDDroppedBytes   string `json:"WredDrp/bytes"`
+	ECNMarkedPackets   string `json:"EcnMarked/pkts"`
+	ECNMarkedBytes     string `json:"EcnMarked/bytes"`
 }
 
-type QueueCountersResponse struct {
-	Packets        string `json:"Counter/pkts"`
-	Bytes          string `json:"Counter/bytes"`
-	DroppedPackets string `json:"Drop/pkts"`
-	DroppedBytes   string `json:"Drop/bytes"`
-	TrimmedPackets string `json:"Trim/pkts"`
-}
-
-func RemapAliasToPortNameForQueues(queueData map[string]interface{}) map[string]interface{} {
-	aliasMap := sdc.AliasToPortNameMap()
-	remapped := make(map[string]interface{})
-
-	for key, val := range queueData {
-		port, queueIdx, found := strings.Cut(key, separator)
-		if !found {
-			log.Warningf("Ignoring the invalid queue '%v'", key)
-			continue
-		}
-		if vendorPortName, ok := aliasMap[port]; ok {
-			remapped[vendorPortName+separator+queueIdx] = val
-		} else {
-			remapped[key] = val
-		}
-	}
-
-	return remapped
-}
-
-func getQueueCountersSnapshot(ifaces []string) (map[string]QueueCountersResponse, error) {
+func getQueueCountersSnapshot(ifaces []string) (map[string]queueCountersResponse, error) {
 	var queries [][]string
 	if len(ifaces) == 0 {
 		// Need queue counters for all interfaces
-		queries = append(queries, []string{dbName, "COUNTERS", "Ethernet*", "Queues"})
+		queries = append(queries, []string{"COUNTERS_DB", "COUNTERS", "Ethernet*", "Queues"})
 	} else {
 		for _, iface := range ifaces {
-			queries = append(queries, []string{dbName, "COUNTERS", iface, "Queues"})
+			queries = append(queries, []string{"COUNTERS_DB", "COUNTERS", iface, "Queues"})
 		}
 	}
 
@@ -68,7 +39,7 @@ func getQueueCountersSnapshot(ifaces []string) (map[string]QueueCountersResponse
 
 	queueCounters := RemapAliasToPortNameForQueues(queryMap)
 
-	response := make(map[string]QueueCountersResponse)
+	response := make(map[string]queueCountersResponse)
 	for queue, counters := range queueCounters {
 		if strings.HasSuffix(queue, ":periodic") {
 			// Ignoring periodic queue watermarks
@@ -79,12 +50,16 @@ func getQueueCountersSnapshot(ifaces []string) (map[string]QueueCountersResponse
 			log.Warningf("Ignoring invalid counters for the queue '%v': %v", queue, counters)
 			continue
 		}
-		response[queue] = QueueCountersResponse{
-			Packets:        GetValueOrDefault(countersMap, "SAI_QUEUE_STAT_PACKETS", defaultMissingCounterValue),
-			Bytes:          GetValueOrDefault(countersMap, "SAI_QUEUE_STAT_BYTES", defaultMissingCounterValue),
-			DroppedPackets: GetValueOrDefault(countersMap, "SAI_QUEUE_STAT_DROPPED_PACKETS", defaultMissingCounterValue),
-			DroppedBytes:   GetValueOrDefault(countersMap, "SAI_QUEUE_STAT_DROPPED_BYTES", defaultMissingCounterValue),
-			TrimmedPackets: GetValueOrDefault(countersMap, "SAI_QUEUE_STAT_TRIM_PACKETS", defaultMissingCounterValue),
+		response[queue] = queueCountersResponse{
+			Packets:            GetValueOrDefault(countersMap, "SAI_QUEUE_STAT_PACKETS", defaultMissingCounterValue),
+			Bytes:              GetValueOrDefault(countersMap, "SAI_QUEUE_STAT_BYTES", defaultMissingCounterValue),
+			DroppedPackets:     GetValueOrDefault(countersMap, "SAI_QUEUE_STAT_DROPPED_PACKETS", defaultMissingCounterValue),
+			DroppedBytes:       GetValueOrDefault(countersMap, "SAI_QUEUE_STAT_DROPPED_BYTES", defaultMissingCounterValue),
+			TrimmedPackets:     GetValueOrDefault(countersMap, "SAI_QUEUE_STAT_TRIM_PACKETS", defaultMissingCounterValue),
+			WREDDroppedPackets: GetValueOrDefault(countersMap, "SAI_QUEUE_STAT_WRED_DROPPED_PACKETS", defaultMissingCounterValue),
+			WREDDroppedBytes:   GetValueOrDefault(countersMap, "SAI_QUEUE_STAT_WRED_DROPPED_BYTES", defaultMissingCounterValue),
+			ECNMarkedPackets:   GetValueOrDefault(countersMap, "SAI_QUEUE_STAT_WRED_ECN_MARKED_PACKETS", defaultMissingCounterValue),
+			ECNMarkedBytes:     GetValueOrDefault(countersMap, "SAI_QUEUE_STAT_WRED_ECN_MARKED_BYTES", defaultMissingCounterValue),
 		}
 	}
 	return response, nil
