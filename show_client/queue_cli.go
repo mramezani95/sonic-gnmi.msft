@@ -20,28 +20,50 @@ type queueCountersResponse struct {
 	ECNMarkedBytes     string `json:"EcnMarked/bytes"`
 }
 
-func getQueueCountersSnapshot(ifaces []string) (map[string]queueCountersResponse, error) {
-	var queries [][]string
-	if len(ifaces) == 0 {
-		// Need queue counters for all interfaces
-		queries = append(queries, []string{"COUNTERS_DB", "COUNTERS", "Ethernet*", "Queues"})
-	} else {
-		for _, iface := range ifaces {
-			queries = append(queries, []string{"COUNTERS_DB", "COUNTERS", iface, "Queues"})
+type queueCountersResponseNonZero struct {
+	Packets            string `json:"Counter/pkts,omitempty"`
+	Bytes              string `json:"Counter/bytes,omitempty"`
+	DroppedPackets     string `json:"Drop/pkts,omitempty"`
+	DroppedBytes       string `json:"Drop/bytes,omitempty"`
+	TrimmedPackets     string `json:"Trim/pkts,omitempty"`
+	WREDDroppedPackets string `json:"WredDrp/pkts,omitempty"`
+	WREDDroppedBytes   string `json:"WredDrp/bytes,omitempty"`
+	ECNMarkedPackets   string `json:"EcnMarked/pkts,omitempty"`
+	ECNMarkedBytes     string `json:"EcnMarked/bytes,omitempty"`
+}
+
+func getQueueCountersMappingNonZero(queueCounters map[string]interface{}) map[string]interface{} {
+	response := make(map[string]interface{})
+	for queue, counters := range queueCounters {
+		if strings.HasSuffix(queue, "periodic") {
+			// Ignoring periodic queue watermarks
+			continue
+		}
+		countersMap, ok := counters.(map[string]interface{})
+		if !ok {
+			log.Warningf("Ignoring invalid counters for the queue '%v': %v", queue, counters)
+			continue
+		}
+		response[queue] = queueCountersResponseNonZero{
+			// Only include non-zero counters
+			Packets:            GetNonZeroValueOrEmpty(countersMap, "SAI_QUEUE_STAT_PACKETS"),
+			Bytes:              GetNonZeroValueOrEmpty(countersMap, "SAI_QUEUE_STAT_BYTES"),
+			DroppedPackets:     GetNonZeroValueOrEmpty(countersMap, "SAI_QUEUE_STAT_DROPPED_PACKETS"),
+			DroppedBytes:       GetNonZeroValueOrEmpty(countersMap, "SAI_QUEUE_STAT_DROPPED_BYTES"),
+			TrimmedPackets:     GetNonZeroValueOrEmpty(countersMap, "SAI_QUEUE_STAT_TRIM_PACKETS"),
+			WREDDroppedPackets: GetNonZeroValueOrEmpty(countersMap, "SAI_QUEUE_STAT_WRED_DROPPED_PACKETS"),
+			WREDDroppedBytes:   GetNonZeroValueOrEmpty(countersMap, "SAI_QUEUE_STAT_WRED_DROPPED_BYTES"),
+			ECNMarkedPackets:   GetNonZeroValueOrEmpty(countersMap, "SAI_QUEUE_STAT_WRED_ECN_MARKED_PACKETS"),
+			ECNMarkedBytes:     GetNonZeroValueOrEmpty(countersMap, "SAI_QUEUE_STAT_WRED_ECN_MARKED_BYTES"),
 		}
 	}
+	return response
+}
 
-	queryMap, err := GetMapFromQueries(queries)
-	if err != nil {
-		log.Errorf("Unable to pull data for queries %v, got err %v", queries, err)
-		return nil, err
-	}
-
-	queueCounters := RemapAliasToPortNameForQueues(queryMap)
-
-	response := make(map[string]queueCountersResponse)
+func getQueueCountersMapping(queueCounters map[string]interface{}) map[string]interface{} {
+	response := make(map[string]interface{})
 	for queue, counters := range queueCounters {
-		if strings.HasSuffix(queue, ":periodic") {
+		if strings.HasSuffix(queue, "periodic") {
 			// Ignoring periodic queue watermarks
 			continue
 		}
@@ -62,17 +84,52 @@ func getQueueCountersSnapshot(ifaces []string) (map[string]queueCountersResponse
 			ECNMarkedBytes:     GetValueOrDefault(countersMap, "SAI_QUEUE_STAT_WRED_ECN_MARKED_BYTES", defaultMissingCounterValue),
 		}
 	}
+	return response
+}
+
+/*
+ * The return type is map[string]queueCountersResponse if onlyNonZero is false or map[string]queueCountersResponseNonZero if onlyNonZero is true.
+ */
+func getQueueCountersSnapshot(ifaces []string, onlyNonZero bool) (map[string]interface{}, error) {
+	var queries [][]string
+	if len(ifaces) == 0 {
+		// Need queue counters for all interfaces
+		queries = append(queries, []string{"COUNTERS_DB", "COUNTERS", "Ethernet*", "Queues"})
+	} else {
+		for _, iface := range ifaces {
+			queries = append(queries, []string{"COUNTERS_DB", "COUNTERS", iface, "Queues"})
+		}
+	}
+
+	queryMap, err := GetMapFromQueries(queries)
+	if err != nil {
+		log.Errorf("Unable to pull data for queries %v, got err %v", queries, err)
+		return nil, err
+	}
+
+	queueCounters := RemapAliasToPortNameForQueues(queryMap)
+
+	var response map[string]interface{}
+	if onlyNonZero {
+		response = getQueueCountersMappingNonZero(queueCounters)
+	} else {
+		response = getQueueCountersMapping(queueCounters)
+	}
 	return response, nil
 }
 
 func getQueueCounters(options sdc.OptionMap) ([]byte, error) {
 	var ifaces []string
-
 	if interfaces, ok := options["interfaces"].Strings(); ok {
 		ifaces = interfaces
 	}
 
-	snapshot, err := getQueueCountersSnapshot(ifaces)
+	onlyNonZero := false
+	if nonzeroOpt, ok := options["nonzero"].Bool(); ok {
+		onlyNonZero = nonzeroOpt
+	}
+
+	snapshot, err := getQueueCountersSnapshot(ifaces, onlyNonZero)
 	if err != nil {
 		log.Errorf("Unable to get queue counters due to err: %v", err)
 		return nil, err

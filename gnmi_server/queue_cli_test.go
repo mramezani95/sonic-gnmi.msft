@@ -48,6 +48,10 @@ func TestGetQueueCounters(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to read expected query results for queues of Ethernet0 and Ethernet80: %v", err)
 	}
+	oneSelectedQueueCountersNonZero, err := os.ReadFile("../testdata/QUEUE_COUNTERS_RESULTS_ONE_NON_ZERO.txt")
+	if err != nil {
+		t.Fatalf("Failed to read expected non-zero query results for queues of Ethernet40: %v", err)
+	}
 
 	ResetDataSetsAndMappings(t)
 
@@ -116,6 +120,28 @@ func TestGetQueueCounters(t *testing.T) {
 				elem: <name: "counters" key: { key: "interfaces" value: "Ethernet7" }>
 			`,
 			wantRetCode: codes.NotFound,
+		},
+		{
+			desc:       "query SHOW queue counters interfaces and nonzero options (one interface, nonzero=true)",
+			pathTarget: "SHOW",
+			textPbPath: `
+				elem: <name: "queue" >
+				elem: <name: "counters" key: { key: "interfaces" value: "Ethernet40" } key: { key: "nonzero" value: "true" }>
+			`,
+			wantRetCode: codes.OK,
+			wantRespVal: oneSelectedQueueCountersNonZero,
+			valTest:     true,
+		},
+		{
+			desc:       "query SHOW queue counters interfaces and nonzero options (one interface, nonzero=false)",
+			pathTarget: "SHOW",
+			textPbPath: `
+				elem: <name: "queue" >
+				elem: <name: "counters" key: { key: "interfaces" value: "Ethernet40" } key: { key: "nonzero" value: "false" }>
+			`,
+			wantRetCode: codes.OK,
+			wantRespVal: oneSelectedQueueCounters,
+			valTest:     true,
 		},
 	}
 

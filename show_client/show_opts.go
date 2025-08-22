@@ -12,6 +12,7 @@ const (
 	showCmdOptionInterfaceDesc     = "[interface=TEXT] Filter by single interface name"
 	showCmdOptionPeriodDesc        = "[period=INTEGER] Display statistics over a specified period (in seconds)"
 	showCmdOptionJsonDesc          = "[json=true] No-op since response is in json format"
+	showCmdOptionNonzeroDesc       = "[nonzero=true] Display only non-zero values"
 )
 
 var (
@@ -61,5 +62,11 @@ var (
 		"fetch-from-hardware",
 		showCmdOptionUnimplementedDesc,
 		sdc.StringValue,
+	)
+
+	showCmdOptionNonzero = sdc.NewShowCmdOption(
+		"nonzero",
+		showCmdOptionNonzeroDesc,
+		sdc.BoolValue,
 	)
 )

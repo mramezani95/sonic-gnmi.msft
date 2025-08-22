@@ -181,6 +181,15 @@ func GetValueOrDefault(values map[string]interface{}, key string, defaultValue s
 	return defaultValue
 }
 
+func GetNonZeroValueOrEmpty(values map[string]interface{}, key string) string {
+	if value, ok := values[key]; ok {
+		if intValue, err := strconv.ParseInt(fmt.Sprint(value), base10, 64); err == nil && intValue != 0 {
+			return fmt.Sprint(value)
+		}
+	}
+	return ""
+}
+
 func GetFieldValueString(data map[string]interface{}, key string, defaultValue string, field string) string {
 	entry, ok := data[key].(map[string]interface{})
 	if !ok {
