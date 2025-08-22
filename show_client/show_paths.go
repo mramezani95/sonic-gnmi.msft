@@ -102,5 +102,6 @@ func init() {
 		getQueueCounters,
 		nil,
 		showCmdOptionInterfaces,
+		showCmdOptionNonzero,
 	)
 }
