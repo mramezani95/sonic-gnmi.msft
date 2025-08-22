@@ -4,6 +4,8 @@
         "Counter/pkts": "200",
         "Counter/bytes": "20000",
         "Trim/pkts": "5",
+        "TrimSent/pkts": "4",
+        "TrimDrop/pkts": "1",
         "WredDrp/pkts": "5",
         "WredDrp/bytes": "500",
         "EcnMarked/pkts": "10",

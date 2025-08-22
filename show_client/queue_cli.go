@@ -9,27 +9,31 @@ import (
 )
 
 type queueCountersResponse struct {
-	Packets            string `json:"Counter/pkts"`
-	Bytes              string `json:"Counter/bytes"`
-	DroppedPackets     string `json:"Drop/pkts"`
-	DroppedBytes       string `json:"Drop/bytes"`
-	TrimmedPackets     string `json:"Trim/pkts"`
-	WREDDroppedPackets string `json:"WredDrp/pkts"`
-	WREDDroppedBytes   string `json:"WredDrp/bytes"`
-	ECNMarkedPackets   string `json:"EcnMarked/pkts"`
-	ECNMarkedBytes     string `json:"EcnMarked/bytes"`
+	Packets               string `json:"Counter/pkts"`
+	Bytes                 string `json:"Counter/bytes"`
+	DroppedPackets        string `json:"Drop/pkts"`
+	DroppedBytes          string `json:"Drop/bytes"`
+	TrimmedPackets        string `json:"Trim/pkts"`
+	TrimmedSentPackets    string `json:"TrimSent/pkts"`
+	TrimmedDroppedPackets string `json:"TrimDrop/pkts"`
+	WREDDroppedPackets    string `json:"WredDrp/pkts"`
+	WREDDroppedBytes      string `json:"WredDrp/bytes"`
+	ECNMarkedPackets      string `json:"EcnMarked/pkts"`
+	ECNMarkedBytes        string `json:"EcnMarked/bytes"`
 }
 
 type queueCountersResponseNonZero struct {
-	Packets            string `json:"Counter/pkts,omitempty"`
-	Bytes              string `json:"Counter/bytes,omitempty"`
-	DroppedPackets     string `json:"Drop/pkts,omitempty"`
-	DroppedBytes       string `json:"Drop/bytes,omitempty"`
-	TrimmedPackets     string `json:"Trim/pkts,omitempty"`
-	WREDDroppedPackets string `json:"WredDrp/pkts,omitempty"`
-	WREDDroppedBytes   string `json:"WredDrp/bytes,omitempty"`
-	ECNMarkedPackets   string `json:"EcnMarked/pkts,omitempty"`
-	ECNMarkedBytes     string `json:"EcnMarked/bytes,omitempty"`
+	Packets               string `json:"Counter/pkts,omitempty"`
+	Bytes                 string `json:"Counter/bytes,omitempty"`
+	DroppedPackets        string `json:"Drop/pkts,omitempty"`
+	DroppedBytes          string `json:"Drop/bytes,omitempty"`
+	TrimmedPackets        string `json:"Trim/pkts,omitempty"`
+	TrimmedSentPackets    string `json:"TrimSent/pkts,omitempty"`
+	TrimmedDroppedPackets string `json:"TrimDrop/pkts,omitempty"`
+	WREDDroppedPackets    string `json:"WredDrp/pkts,omitempty"`
+	WREDDroppedBytes      string `json:"WredDrp/bytes,omitempty"`
+	ECNMarkedPackets      string `json:"EcnMarked/pkts,omitempty"`
+	ECNMarkedBytes        string `json:"EcnMarked/bytes,omitempty"`
 }
 
 func getQueueCountersMappingNonZero(queueCounters map[string]interface{}) map[string]interface{} {
@@ -46,15 +50,17 @@ func getQueueCountersMappingNonZero(queueCounters map[string]interface{}) map[st
 		}
 		response[queue] = queueCountersResponseNonZero{
 			// Only include non-zero counters
-			Packets:            GetNonZeroValueOrEmpty(countersMap, "SAI_QUEUE_STAT_PACKETS"),
-			Bytes:              GetNonZeroValueOrEmpty(countersMap, "SAI_QUEUE_STAT_BYTES"),
-			DroppedPackets:     GetNonZeroValueOrEmpty(countersMap, "SAI_QUEUE_STAT_DROPPED_PACKETS"),
-			DroppedBytes:       GetNonZeroValueOrEmpty(countersMap, "SAI_QUEUE_STAT_DROPPED_BYTES"),
-			TrimmedPackets:     GetNonZeroValueOrEmpty(countersMap, "SAI_QUEUE_STAT_TRIM_PACKETS"),
-			WREDDroppedPackets: GetNonZeroValueOrEmpty(countersMap, "SAI_QUEUE_STAT_WRED_DROPPED_PACKETS"),
-			WREDDroppedBytes:   GetNonZeroValueOrEmpty(countersMap, "SAI_QUEUE_STAT_WRED_DROPPED_BYTES"),
-			ECNMarkedPackets:   GetNonZeroValueOrEmpty(countersMap, "SAI_QUEUE_STAT_WRED_ECN_MARKED_PACKETS"),
-			ECNMarkedBytes:     GetNonZeroValueOrEmpty(countersMap, "SAI_QUEUE_STAT_WRED_ECN_MARKED_BYTES"),
+			Packets:               GetNonZeroValueOrEmpty(countersMap, "SAI_QUEUE_STAT_PACKETS"),
+			Bytes:                 GetNonZeroValueOrEmpty(countersMap, "SAI_QUEUE_STAT_BYTES"),
+			DroppedPackets:        GetNonZeroValueOrEmpty(countersMap, "SAI_QUEUE_STAT_DROPPED_PACKETS"),
+			DroppedBytes:          GetNonZeroValueOrEmpty(countersMap, "SAI_QUEUE_STAT_DROPPED_BYTES"),
+			TrimmedPackets:        GetNonZeroValueOrEmpty(countersMap, "SAI_QUEUE_STAT_TRIM_PACKETS"),
+			TrimmedSentPackets:    GetNonZeroValueOrEmpty(countersMap, "SAI_QUEUE_STAT_TX_TRIM_PACKETS"),
+			TrimmedDroppedPackets: GetNonZeroValueOrEmpty(countersMap, "SAI_QUEUE_STAT_DROPPED_TRIM_PACKETS"),
+			WREDDroppedPackets:    GetNonZeroValueOrEmpty(countersMap, "SAI_QUEUE_STAT_WRED_DROPPED_PACKETS"),
+			WREDDroppedBytes:      GetNonZeroValueOrEmpty(countersMap, "SAI_QUEUE_STAT_WRED_DROPPED_BYTES"),
+			ECNMarkedPackets:      GetNonZeroValueOrEmpty(countersMap, "SAI_QUEUE_STAT_WRED_ECN_MARKED_PACKETS"),
+			ECNMarkedBytes:        GetNonZeroValueOrEmpty(countersMap, "SAI_QUEUE_STAT_WRED_ECN_MARKED_BYTES"),
 		}
 	}
 	return response
@@ -73,15 +79,17 @@ func getQueueCountersMapping(queueCounters map[string]interface{}) map[string]in
 			continue
 		}
 		response[queue] = queueCountersResponse{
-			Packets:            GetValueOrDefault(countersMap, "SAI_QUEUE_STAT_PACKETS", defaultMissingCounterValue),
-			Bytes:              GetValueOrDefault(countersMap, "SAI_QUEUE_STAT_BYTES", defaultMissingCounterValue),
-			DroppedPackets:     GetValueOrDefault(countersMap, "SAI_QUEUE_STAT_DROPPED_PACKETS", defaultMissingCounterValue),
-			DroppedBytes:       GetValueOrDefault(countersMap, "SAI_QUEUE_STAT_DROPPED_BYTES", defaultMissingCounterValue),
-			TrimmedPackets:     GetValueOrDefault(countersMap, "SAI_QUEUE_STAT_TRIM_PACKETS", defaultMissingCounterValue),
-			WREDDroppedPackets: GetValueOrDefault(countersMap, "SAI_QUEUE_STAT_WRED_DROPPED_PACKETS", defaultMissingCounterValue),
-			WREDDroppedBytes:   GetValueOrDefault(countersMap, "SAI_QUEUE_STAT_WRED_DROPPED_BYTES", defaultMissingCounterValue),
-			ECNMarkedPackets:   GetValueOrDefault(countersMap, "SAI_QUEUE_STAT_WRED_ECN_MARKED_PACKETS", defaultMissingCounterValue),
-			ECNMarkedBytes:     GetValueOrDefault(countersMap, "SAI_QUEUE_STAT_WRED_ECN_MARKED_BYTES", defaultMissingCounterValue),
+			Packets:               GetValueOrDefault(countersMap, "SAI_QUEUE_STAT_PACKETS", defaultMissingCounterValue),
+			Bytes:                 GetValueOrDefault(countersMap, "SAI_QUEUE_STAT_BYTES", defaultMissingCounterValue),
+			DroppedPackets:        GetValueOrDefault(countersMap, "SAI_QUEUE_STAT_DROPPED_PACKETS", defaultMissingCounterValue),
+			DroppedBytes:          GetValueOrDefault(countersMap, "SAI_QUEUE_STAT_DROPPED_BYTES", defaultMissingCounterValue),
+			TrimmedPackets:        GetValueOrDefault(countersMap, "SAI_QUEUE_STAT_TRIM_PACKETS", defaultMissingCounterValue),
+			TrimmedSentPackets:    GetValueOrDefault(countersMap, "SAI_QUEUE_STAT_TX_TRIM_PACKETS", defaultMissingCounterValue),
+			TrimmedDroppedPackets: GetValueOrDefault(countersMap, "SAI_QUEUE_STAT_DROPPED_TRIM_PACKETS", defaultMissingCounterValue),
+			WREDDroppedPackets:    GetValueOrDefault(countersMap, "SAI_QUEUE_STAT_WRED_DROPPED_PACKETS", defaultMissingCounterValue),
+			WREDDroppedBytes:      GetValueOrDefault(countersMap, "SAI_QUEUE_STAT_WRED_DROPPED_BYTES", defaultMissingCounterValue),
+			ECNMarkedPackets:      GetValueOrDefault(countersMap, "SAI_QUEUE_STAT_WRED_ECN_MARKED_PACKETS", defaultMissingCounterValue),
+			ECNMarkedBytes:        GetValueOrDefault(countersMap, "SAI_QUEUE_STAT_WRED_ECN_MARKED_BYTES", defaultMissingCounterValue),
 		}
 	}
 	return response
