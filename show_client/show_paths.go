@@ -103,5 +103,6 @@ func init() {
 		nil,
 		showCmdOptionInterfaces,
 		showCmdOptionNonzero,
+		showCmdOptionTrim,
 	)
 }

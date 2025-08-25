@@ -40,6 +40,10 @@ func TestGetQueueCounters(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to read expected query results for queues of all interfaces: %v", err)
 	}
+	allQueueTrimCounters, err := os.ReadFile("../testdata/QUEUE_COUNTERS_RESULTS_ALL_TRIM.txt")
+	if err != nil {
+		t.Fatalf("Failed to read expected query results for trim counters of all interfaces: %v", err)
+	}
 	oneSelectedQueueCounters, err := os.ReadFile("../testdata/QUEUE_COUNTERS_RESULTS_ONE.txt")
 	if err != nil {
 		t.Fatalf("Failed to read expected query results for queues of Ethernet40: %v", err)
@@ -51,6 +55,10 @@ func TestGetQueueCounters(t *testing.T) {
 	oneSelectedQueueCountersNonZero, err := os.ReadFile("../testdata/QUEUE_COUNTERS_RESULTS_ONE_NON_ZERO.txt")
 	if err != nil {
 		t.Fatalf("Failed to read expected non-zero query results for queues of Ethernet40: %v", err)
+	}
+	oneSelectedQueueTrimCountersNonZero, err := os.ReadFile("../testdata/QUEUE_COUNTERS_RESULTS_ONE_NON_ZERO_TRIM.txt")
+	if err != nil {
+		t.Fatalf("Failed to read expected non-zero query results for trim counters of Ethernet40: %v", err)
 	}
 
 	ResetDataSetsAndMappings(t)
@@ -89,6 +97,17 @@ func TestGetQueueCounters(t *testing.T) {
 				AddDataSet(t, CountersDbNum, queueOidMappingFileName)
 				AddDataSet(t, CountersDbNum, queueCountersFileName)
 			},
+		},
+		{
+			desc:       "query SHOW queue counters trim option (trim=true)",
+			pathTarget: "SHOW",
+			textPbPath: `
+				elem: <name: "queue" >
+				elem: <name: "counters" key: { key: "trim" value: "true" }>
+			`,
+			wantRetCode: codes.OK,
+			wantRespVal: allQueueTrimCounters,
+			valTest:     true,
 		},
 		{
 			desc:       "query SHOW queue counters interfaces option (one interface)",
@@ -141,6 +160,17 @@ func TestGetQueueCounters(t *testing.T) {
 			`,
 			wantRetCode: codes.OK,
 			wantRespVal: oneSelectedQueueCounters,
+			valTest:     true,
+		},
+		{
+			desc:       "query SHOW queue counters interfaces, nonzero, and trim options (one interface, nonzero=true, trim=true)",
+			pathTarget: "SHOW",
+			textPbPath: `
+				elem: <name: "queue" >
+				elem: <name: "counters" key: { key: "interfaces" value: "Ethernet40" } key: { key: "nonzero" value: "true" } key: { key: "trim" value: "true" }>
+			`,
+			wantRetCode: codes.OK,
+			wantRespVal: oneSelectedQueueTrimCountersNonZero,
 			valTest:     true,
 		},
 	}
