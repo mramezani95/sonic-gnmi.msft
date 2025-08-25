@@ -60,6 +60,7 @@ func getQueueCountersMappingNonZero(queueCounters map[string]interface{}, onlyTr
 			log.Warningf("Ignoring invalid counters for the queue '%v': %v", queue, counters)
 			continue
 		}
+		// Only include non-zero counters
 		if onlyTrim {
 			response[queue] = trimCountersResponseNonZero{
 				TrimmedPackets:        GetNonZeroValueOrEmpty(countersMap, "SAI_QUEUE_STAT_TRIM_PACKETS"),
@@ -68,7 +69,6 @@ func getQueueCountersMappingNonZero(queueCounters map[string]interface{}, onlyTr
 			}
 		} else {
 			response[queue] = queueCountersResponseNonZero{
-				// Only include non-zero counters
 				Packets:               GetNonZeroValueOrEmpty(countersMap, "SAI_QUEUE_STAT_PACKETS"),
 				Bytes:                 GetNonZeroValueOrEmpty(countersMap, "SAI_QUEUE_STAT_BYTES"),
 				DroppedPackets:        GetNonZeroValueOrEmpty(countersMap, "SAI_QUEUE_STAT_DROPPED_PACKETS"),
@@ -123,9 +123,6 @@ func getQueueCountersMapping(queueCounters map[string]interface{}, onlyTrim bool
 	return response
 }
 
-/*
- * The return type is map[string]queueCountersResponse if onlyNonZero is false or map[string]queueCountersResponseNonZero if onlyNonZero is true.
- */
 func getQueueCountersSnapshot(ifaces []string, onlyNonZero bool, onlyTrim bool) (map[string]interface{}, error) {
 	var queries [][]string
 	if len(ifaces) == 0 {
