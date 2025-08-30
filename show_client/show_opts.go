@@ -21,6 +21,7 @@ const (
 	showCmdOptionSidDesc           = "[sid=TEXT] Filter by SRv6 SID"
 	showCmdOptionNonzeroDesc       = "[nonzero=true] Display only non-zero values"
 	showCmdOptionTrimDesc          = "[trim=true] Display only trim counters"
+	showCmdOptionQueueTypeDesc     = "[queue-type=TEXT] Filter by queue type (unicast/multicast/all)"
 )
 
 var (
@@ -125,5 +126,11 @@ var (
 		"trim",
 		showCmdOptionTrimDesc,
 		sdc.BoolValue,
+	)
+
+	showCmdOptionQueueType = sdc.NewShowCmdOption(
+		"queue-type",
+		showCmdOptionQueueTypeDesc,
+		sdc.StringValue,
 	)
 )
