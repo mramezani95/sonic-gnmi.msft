@@ -307,6 +307,15 @@ func init() {
 		nil,
 	)
 	sdc.RegisterCliPath(
+		[]string{"SHOW", "interfaces", "description"},
+		getInterfacesDescription,
+		nil,
+		sdc.UnimplementedOption(showCmdOptionNamespace),
+		sdc.UnimplementedOption(showCmdOptionDisplay),
+		showCmdOptionInterface,
+		showCmdOptionVerbose,
+	)
+	sdc.RegisterCliPath(
 		[]string{"SHOW", "queue", "watermark"},
 		getQueueUserWatermarks,
 		nil,
