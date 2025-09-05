@@ -100,13 +100,13 @@ func init() {
 		sdc.UnimplementedOption(showCmdOptionDisplay),
 	)
 	sdc.RegisterCliPath(
-		[]string{"SHOW", "headroom_pool", "watermark"},
+		[]string{"SHOW", "headroom-pool", "watermark"},
 		getHeadroomPoolWatermark,
 		nil,
 		sdc.UnimplementedOption(showCmdOptionNamespace),
 	)
 	sdc.RegisterCliPath(
-		[]string{"SHOW", "headroom_pool", "persistent-watermark"},
+		[]string{"SHOW", "headroom-pool", "persistent-watermark"},
 		getHeadroomPoolPersistentWatermark,
 		nil,
 		sdc.UnimplementedOption(showCmdOptionNamespace),
@@ -141,6 +141,14 @@ func init() {
 		nil,
 		sdc.UnimplementedOption(showCmdOptionNamespace),
 		showCmdOptionDisplay,
+	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "ipv6", "route"},
+		getIPv6Route,
+		nil,
+		sdc.UnimplementedOption(showCmdOptionNamespace),
+		showCmdOptionDisplay,
+		showCmdOptionFrrRouteArgs,
 	)
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "lldp", "table"},
@@ -281,6 +289,22 @@ func init() {
 		getInterfaceFlap,
 		nil,
 		showCmdOptionInterface,
+	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "interface", "neighbor", "expected"},
+		getInterfaceNeighborExpected,
+		nil,
+	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "interface", "naming_mode"},
+		getInterfaceNamingMode,
+		nil,
+		showCmdOptionVerbose,
+	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "services"},
+		getServices,
+		nil,
 	)
 	sdc.RegisterCliPath(
 		[]string{"SHOW", "queue", "watermark"},
