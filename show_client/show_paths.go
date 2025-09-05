@@ -306,4 +306,13 @@ func init() {
 		getServices,
 		nil,
 	)
+	sdc.RegisterCliPath(
+		[]string{"SHOW", "interfaces", "description"},
+		getInterfacesDescription,
+		nil,
+		sdc.UnimplementedOption(showCmdOptionNamespace),
+		sdc.UnimplementedOption(showCmdOptionDisplay),
+		showCmdOptionInterface,
+		showCmdOptionVerbose,
+	)
 }
